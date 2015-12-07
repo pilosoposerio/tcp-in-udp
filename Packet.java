@@ -30,6 +30,64 @@ public class Packet {
 		
 		this.data = data;
 	}
+
+	public boolean isSYN_FLAG() {
+		return SYN_FLAG;
+	}
+
+	public void setSYN_FLAG(boolean sYN_FLAG) {
+		SYN_FLAG = sYN_FLAG;
+	}
+
+	public boolean isACK_FLAG() {
+		return ACK_FLAG;
+	}
+
+	public void setACK_FLAG(boolean aCK_FLAG) {
+		ACK_FLAG = aCK_FLAG;
+	}
+
+	public boolean isFIN_FLAG() {
+		return FIN_FLAG;
+	}
+
+	public void setFIN_FLAG(boolean fIN_FLAG) {
+		FIN_FLAG = fIN_FLAG;
+	}
+
+	public int getSYN_NUM() {
+		return SYN_NUM;
+	}
+
+	public void setSYN_NUM(int sYN_NUM) {
+		SYN_NUM = sYN_NUM;
+	}
+
+	public int getACK_NUM() {
+		return ACK_NUM;
+	}
+
+	public void setACK_NUM(int aCK_NUM) {
+		ACK_NUM = aCK_NUM;
+	}
+
+	public int getWINDOW_SIZE() {
+		return WINDOW_SIZE;
+	}
+
+	public void setWINDOW_SIZE(int wINDOW_SIZE) {
+		WINDOW_SIZE = wINDOW_SIZE;
+	}
+
+	public String getData() {
+		return data;
+	}
+
+	public void setData(String data) {
+		this.data = data;
+	}
+
+
 	
 	@Override
 	public String toString(){
