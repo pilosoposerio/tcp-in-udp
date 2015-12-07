@@ -1,11 +1,11 @@
 
 public class Packet {
-	private boolean SYN_FLAG;
-	private boolean ACK_FLAG;
-	private boolean FIN_FLAG;
-	private int SYN_NUM;
-	private int ACK_NUM;
-	private int WINDOW_SIZE;
+	private boolean syncFlag;
+	private boolean ackFlag;
+	private boolean finFlag;
+	private int syncNum;
+	private int ackNum;
+	private int windowSize;
 	private String data;
 	
 	/*SYNCF, ACKF, FINF, SYNN, ACKN, WS, DATA*/
@@ -20,63 +20,63 @@ public class Packet {
 			int windowSize, 
 			String data){
 		
-		this.SYN_FLAG = syncFlag;
-		this.ACK_FLAG = ackFlag;
-		this.FIN_FLAG = finFlag;
+		this.syncFlag = syncFlag;
+		this.ackFlag = ackFlag;
+		this.finFlag = finFlag;
 		
-		this.SYN_NUM = synNum;
-		this.ACK_NUM = ackNum;
-		this.WINDOW_SIZE = windowSize;
+		this.syncNum = synNum;
+		this.ackNum = ackNum;
+		this.windowSize = windowSize;
 		
 		this.data = data;
 	}
 
-	public boolean isSYN_FLAG() {
-		return SYN_FLAG;
+	public boolean isSyncFlag() {
+		return syncFlag;
 	}
 
-	public void setSYN_FLAG(boolean sYN_FLAG) {
-		SYN_FLAG = sYN_FLAG;
+	public void setSyncFlag(boolean sYN_FLAG) {
+		syncFlag = sYN_FLAG;
 	}
 
-	public boolean isACK_FLAG() {
-		return ACK_FLAG;
+	public boolean isAckFlag() {
+		return ackFlag;
 	}
 
-	public void setACK_FLAG(boolean aCK_FLAG) {
-		ACK_FLAG = aCK_FLAG;
+	public void setAckFlag(boolean aCK_FLAG) {
+		ackFlag = aCK_FLAG;
 	}
 
-	public boolean isFIN_FLAG() {
-		return FIN_FLAG;
+	public boolean isFinFlag() {
+		return finFlag;
 	}
 
-	public void setFIN_FLAG(boolean fIN_FLAG) {
-		FIN_FLAG = fIN_FLAG;
+	public void setFinFlag(boolean fIN_FLAG) {
+		finFlag = fIN_FLAG;
 	}
 
-	public int getSYN_NUM() {
-		return SYN_NUM;
+	public int getsyncNum() {
+		return syncNum;
 	}
 
-	public void setSYN_NUM(int sYN_NUM) {
-		SYN_NUM = sYN_NUM;
+	public void setSyncNum(int sYN_NUM) {
+		syncNum = sYN_NUM;
 	}
 
-	public int getACK_NUM() {
-		return ACK_NUM;
+	public int getackNum() {
+		return ackNum;
 	}
 
-	public void setACK_NUM(int aCK_NUM) {
-		ACK_NUM = aCK_NUM;
+	public void setAckNum(int aCK_NUM) {
+		ackNum = aCK_NUM;
 	}
 
-	public int getWINDOW_SIZE() {
-		return WINDOW_SIZE;
+	public int getWindowSize() {
+		return windowSize;
 	}
 
-	public void setWINDOW_SIZE(int wINDOW_SIZE) {
-		WINDOW_SIZE = wINDOW_SIZE;
+	public void setWindowSize(int wINDOW_SIZE) {
+		windowSize = wINDOW_SIZE;
 	}
 
 	public String getData() {
@@ -92,12 +92,12 @@ public class Packet {
 	@Override
 	public String toString(){
 		StringBuilder builder = new StringBuilder();
-		builder.append("SYNF=").append(SYN_FLAG?1:0).append(";").
-		append("SYNN=").append(SYN_NUM).append(";").
-		append("ACKF=").append(ACK_FLAG?1:0).append(";").
-		append("ACKN=").append(ACK_NUM).append(";").
-		append("FINF=").append(FIN_FLAG?1:0).append(";").
-		append("WINDOW=").append(WINDOW_SIZE).append(";"). 
+		builder.append("SYNF=").append(syncFlag?1:0).append(";").
+		append("SYNN=").append(syncNum).append(";").
+		append("ACKF=").append(ackFlag?1:0).append(";").
+		append("ACKN=").append(ackNum).append(";").
+		append("FINF=").append(finFlag?1:0).append(";").
+		append("WINDOW=").append(windowSize).append(";"). 
 		append("DATA=").append(data);
 		
 		return builder.toString();
@@ -112,34 +112,34 @@ public class Packet {
 		String data="";
 		
 		String[] attribs = packetData.split(";");
-		
+		Packet packet = new Packet();
 		for(String token: attribs){
 			String[] pair = token.split("=");
 			switch(pair[0]){
 				case "SYNF":
-					syncFlag = pair[1]=="1";
+					packet.setSyncFlag(pair[1]=="1");
 					break;
 				case "ACKF":
-					ackFlag = pair[1]=="1";
+					packet.setAckFlag(pair[1]=="1");
 					break;
 				case "FINF":
-					ackFlag = pair[1]=="1";
+					packet.setAckFlag(pair[1]=="1");
 					break;
 				case "SYNN":
-					synNum = Integer.parseInt(pair[1]);
+					packet.setSyncNum(Integer.parseInt(pair[1]));
 					break;
 				case "ACKN":
-					ackNum = Integer.parseInt(pair[1]);
+					packet.setAckNum(Integer.parseInt(pair[1]));
 					break;
 				case "WINDOW":
-					winSize = Integer.parseInt(pair[1]);
+					packet.setWindowSize(Integer.parseInt(pair[1]));
 					break;
 				case "DATA":
-					data = pair[1];
+					packet.setData(pair[1]);
 					break;
 			}
 		}
-		return new Packet(syncFlag, ackFlag, finFlag, synNum, ackNum,winSize, data);
+		return packet;
 	}
 	
 }
