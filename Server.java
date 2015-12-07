@@ -3,6 +3,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class Server {
 	private static final int MAXIMUM_BUFFER_SIZE = 512;
@@ -29,8 +30,6 @@ public class Server {
 		}
 		
 		listener.start();
-		
-		
 	}
 	
 	private static Thread listener = new Thread(new Runnable(){
@@ -43,7 +42,24 @@ public class Server {
 				try {
 					System.out.println("UDP Server ready! Waiting for connections...");
 					serverSocket.receive(packet);
-					new PacketHandler(packet).start();
+					Packet p = Packet.valueOf(new String(buff).trim());
+					if(state == State.NONE){
+						
+						if(p.isSyncFlag()){ //packet myst be a SYN packet
+							InetAddress clientAddress = packet.getAddress();
+							int clientPort = packet.getPort();
+
+							//send ACK+SYN packet
+							Packet ackSyncPacket = new Packet();
+							ackSyncPacket.setAckFlag(true);
+							ackSyncPacket.setAckNum(p.getSyncNum()+1);
+							ackSyncPacket.setSyncFlag(true);
+							ackSyncPacket.setSyncNum(ThreadLocalRandom.current().nextInt(1, 5000));
+							send(clientAddress, clientPort, ackSyncPacket.toString());
+							state = State.SYN_RECV;
+						}
+					}
+
 				} catch (IOException e) {
 					System.out.println("Failed to receive a packet... "+e.getMessage());
 				}

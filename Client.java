@@ -58,6 +58,7 @@ public class Client {
 		syncPacket.setSyncFlag(true);
 		syncPacket.setSyncNum(ThreadLocalRandom.current().nextInt(1, 5000));
 		send(syncPacket.toString());
+		state = State.SYN_SEND;
 
 
 
@@ -74,6 +75,7 @@ public class Client {
 				
 				try {
 					clientSocket.receive(packet);
+					Packet p = Packet.valueOf(new String(buff).trim());
 					
 				} catch (IOException e) {
 					System.out.println("Failed to receive a packet... "+e.getMessage());
