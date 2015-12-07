@@ -7,6 +7,7 @@ import java.net.SocketException;
 public class Server {
 	private static final int MAXIMUM_BUFFER_SIZE = 512;
 	private static DatagramSocket serverSocket;
+	private static State = State.NONE;
 	public static void main(String[] args) {
 		if(args.length < 1){
 			System.out.println("Usage is: java Server <port>");
