@@ -14,7 +14,8 @@ public class Client {
 	private static int serverPort=0;
 	private static int selfPort=0;
 	private static State state = State.NONE;
-	
+	private static int ACK_NUM = 0;
+	private static int SYNC_NUM = 0;
 	public static void main(String[] args) {
 		if(args.length < 2){
 			System.out.println("Usage is: java Server <own port> <server address> <server port>");
@@ -56,14 +57,10 @@ public class Client {
 		/*INITIALIZE THREE WAY HANDSHAKE BY SENDING A SYN PACKET*/
 		Packet syncPacket = new Packet();
 		syncPacket.setSyncFlag(true);
-		syncPacket.setSyncNum(ThreadLocalRandom.current().nextInt(1, 5000));
+		SYNC_NUM = ThreadLocalRandom.current().nextInt(1, 5000);
+		syncPacket.setSyncNum(SYNC_NUM);
 		send(syncPacket.toString());
 		state = State.SYN_SEND;
-
-
-
-		
-		
 	}
 	
 	private static Thread listener = new Thread(new Runnable(){
@@ -77,6 +74,17 @@ public class Client {
 					clientSocket.receive(packet);
 					Packet p = Packet.valueOf(new String(buff).trim());
 					
+					if(state == State.SYN_SEND){ //first packet must be an ACK+SYN packet
+						if(p.getAckNum() == SYNC_NUM +1){ //ack must be valid
+							//send ACK packet to server
+							Packet ackPacket = new Packet();
+							ackPacket.setAckFlag(true);
+							ackPacket.setAckNum(p.getSyncNum()+1);
+							send(ackPacket.toString());
+							state = State.ESTABLISHED;
+						}
+					}
+
 				} catch (IOException e) {
 					System.out.println("Failed to receive a packet... "+e.getMessage());
 				}

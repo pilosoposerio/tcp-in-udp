@@ -9,6 +9,8 @@ public class Server {
 	private static final int MAXIMUM_BUFFER_SIZE = 512;
 	private static DatagramSocket serverSocket;
 	private static State state = State.NONE;
+	private static int ACK_NUM = 0;
+	private static int SYNC_NUM = 0;
 	public static void main(String[] args) {
 		if(args.length < 1){
 			System.out.println("Usage is: java Server <port>");
@@ -45,18 +47,24 @@ public class Server {
 					Packet p = Packet.valueOf(new String(buff).trim());
 					if(state == State.NONE){
 						
-						if(p.isSyncFlag()){ //packet myst be a SYN packet
+						if(p.isSyncFlag()){ //first packet must be a SYN packet
 							InetAddress clientAddress = packet.getAddress();
 							int clientPort = packet.getPort();
 
 							//send ACK+SYN packet
 							Packet ackSyncPacket = new Packet();
 							ackSyncPacket.setAckFlag(true);
-							ackSyncPacket.setAckNum(p.getSyncNum()+1);
+							ACK_NUM = p.getSyncNum()+1;
+							ackSyncPacket.setAckNum(ACK_NUM);
 							ackSyncPacket.setSyncFlag(true);
-							ackSyncPacket.setSyncNum(ThreadLocalRandom.current().nextInt(1, 5000));
+							SYNC_NUM = ThreadLocalRandom.current().nextInt(1, 5000);
+							ackSyncPacket.setSyncNum(SYNC_NUM);
 							send(clientAddress, clientPort, ackSyncPacket.toString());
 							state = State.SYN_RECV;
+						}
+					}else if(state == State.SYN_RECV){
+						if(p.isAckFlag() && p.getAckNum() == SYNC_NUM+ 1){ //must be an ACK packet and valid ack
+
 						}
 					}
 
