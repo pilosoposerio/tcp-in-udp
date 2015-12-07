@@ -64,8 +64,10 @@ public class Server {
 						}
 					}else if(state == State.SYN_RECV){
 						if(p.isAckFlag() && p.getAckNum() == SYNC_NUM+ 1){ //must be an ACK packet and valid ack
-
+							state = State.ESTABLISHED;
 						}
+					}else if(state == State.ESTABLISHED){
+						
 					}
 
 				} catch (IOException e) {

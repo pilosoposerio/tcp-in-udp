@@ -83,6 +83,8 @@ public class Client {
 							send(ackPacket.toString());
 							state = State.ESTABLISHED;
 						}
+					}else if(state == State.ESTABLISHED){
+						
 					}
 
 				} catch (IOException e) {
