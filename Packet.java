@@ -8,6 +8,10 @@ public class Packet {
 	private int WINDOW_SIZE;
 	private String data;
 	
+	/*SYNCF, ACKF, FINF, SYNN, ACKN, WS, DATA*/
+	public Packet(){
+		this(false, false, false, 0,0,0,"");
+	}
 	public Packet(boolean syncFlag, 
 			boolean ackFlag, 
 			boolean finFlag, 
