@@ -55,7 +55,7 @@ public class Packet {
 		finFlag = fIN_FLAG;
 	}
 
-	public int getsyncNum() {
+	public int getSyncNum() {
 		return syncNum;
 	}
 
@@ -63,7 +63,7 @@ public class Packet {
 		syncNum = sYN_NUM;
 	}
 
-	public int getackNum() {
+	public int getAckNum() {
 		return ackNum;
 	}
 
