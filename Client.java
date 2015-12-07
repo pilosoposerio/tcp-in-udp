@@ -4,6 +4,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class Client {
 
@@ -49,8 +50,17 @@ public class Client {
 		
 		//START LISTENER
 		listener.start();
+		System.out.println("UDP listener for this client started!");
 		
-		
+		//START MAIN PROCESS
+		/*INITIALIZE THREE WAY HANDSHAKE BY SENDING A SYN PACKET*/
+		Packet syncPacket = new Packet();
+		syncPacket.setSyncFlag(true);
+		syncPacket.setSyncNum(ThreadLocalRandom.current().nextInt(1, 5000));
+		send(syncPacket.toString());
+
+
+
 		
 		
 	}
@@ -63,9 +73,8 @@ public class Client {
 				DatagramPacket packet = new DatagramPacket(buff,buff.length);
 				
 				try {
-					System.out.println("UDP Server ready! Waiting for connections...");
 					clientSocket.receive(packet);
-					new PacketHandler(packet).start();
+					
 				} catch (IOException e) {
 					System.out.println("Failed to receive a packet... "+e.getMessage());
 				}
@@ -73,7 +82,12 @@ public class Client {
 		}
 	});
 	
-	public static void send(InetAddress address, int port, String message){
+	//sends to server by default
+	private static void send(String message){
+		send(serverAddress, serverPort, message);
+	}
+
+	private static void send(InetAddress address, int port, String message){
 		byte[] buff = message.getBytes();
 		DatagramPacket packet = new DatagramPacket(buff, buff.length,address,port);
 		try {
