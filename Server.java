@@ -27,19 +27,28 @@ public class Server {
 			return;
 		}
 		
-		while(true){
-			byte[] buff = new byte[MAXIMUM_BUFFER_SIZE];
-			DatagramPacket packet = new DatagramPacket(buff,buff.length);
-			
-			try {
-				System.out.println("UDP Server ready! Waiting for connections...");
-				serverSocket.receive(packet);
-				new PacketHandler(packet).start();
-			} catch (IOException e) {
-				System.out.println("Failed to receive a packet... "+e.getMessage());
+		listener.start();
+		
+		
+	}
+	
+	private static Thread listener = new Thread(new Runnable(){
+		@Override
+		public void run() {
+			while(true){
+				byte[] buff = new byte[MAXIMUM_BUFFER_SIZE];
+				DatagramPacket packet = new DatagramPacket(buff,buff.length);
+				
+				try {
+					System.out.println("UDP Server ready! Waiting for connections...");
+					serverSocket.receive(packet);
+					new PacketHandler(packet).start();
+				} catch (IOException e) {
+					System.out.println("Failed to receive a packet... "+e.getMessage());
+				}
 			}
 		}
-	}
+	});
 	
 	public static void send(InetAddress address, int port, String message){
 		byte[] buff = message.getBytes();
@@ -49,22 +58,6 @@ public class Server {
 		} catch (IOException e) {
 			System.out.println("Unable to send packet: "+message);
 		}
-	}
-}
-
-class PacketHandler extends Thread{
-	private DatagramPacket packet;
-	public PacketHandler(DatagramPacket packet){
-		this.packet = packet;
-	}
-	
-	@Override
-	public void run(){
-		/*TODO handle packet*/
-		
-		//temporarily, just print the data.
-		String data = new String(packet.getData());
-		System.out.println("Packet Data: "+data);
 	}
 }
 

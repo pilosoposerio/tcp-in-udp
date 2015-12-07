@@ -12,6 +12,8 @@ public class Client {
 	private static InetAddress serverAddress;
 	private static int serverPort=0;
 	private static int selfPort=0;
+	private static State state = State.NONE;
+	
 	public static void main(String[] args) {
 		if(args.length < 2){
 			System.out.println("Usage is: java Server <own port> <server address> <server port>");
@@ -45,19 +47,31 @@ public class Client {
 			return;
 		}
 		
-		while(true){
-			byte[] buff = new byte[MAXIMUM_BUFFER_SIZE];
-			DatagramPacket packet = new DatagramPacket(buff,buff.length);
-			
-			try {
-				System.out.println("UDP Server ready! Waiting for connections...");
-				clientSocket.receive(packet);
-				new PacketHandler(packet).start();
-			} catch (IOException e) {
-				System.out.println("Failed to receive a packet... "+e.getMessage());
+		//START LISTENER
+		listener.start();
+		
+		
+		
+		
+	}
+	
+	private static Thread listener = new Thread(new Runnable(){
+		@Override
+		public void run() {
+			while(true){
+				byte[] buff = new byte[MAXIMUM_BUFFER_SIZE];
+				DatagramPacket packet = new DatagramPacket(buff,buff.length);
+				
+				try {
+					System.out.println("UDP Server ready! Waiting for connections...");
+					clientSocket.receive(packet);
+					new PacketHandler(packet).start();
+				} catch (IOException e) {
+					System.out.println("Failed to receive a packet... "+e.getMessage());
+				}
 			}
 		}
-	}
+	});
 	
 	public static void send(InetAddress address, int port, String message){
 		byte[] buff = message.getBytes();
