@@ -79,14 +79,16 @@ public class Server {
 							state = State.ESTABLISHED;
 							System.out.println("Threeway handshake 3/3.");
 						}
-					}else if(state == State.ESTABLISHED){
+					}
+
+					if(state == State.ESTABLISHED){
 						//get the data
 						Scanner in = new Scanner(new File(INPUT_DATA_FILE_NAME));
 						while(in.hasNextLine()){
 							INPUT_DATA += in.nextLine();
 						}
 						in.close();
-						System.out.println("Data loaded was:\n"+INPUT_DATA);
+
 						//send the data
 					}
 
