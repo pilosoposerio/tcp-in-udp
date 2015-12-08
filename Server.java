@@ -50,11 +50,19 @@ public class Server {
 				byte[] buff = new byte[MAXIMUM_BUFFER_SIZE];
 				DatagramPacket packet = new DatagramPacket(buff,buff.length);
 				
+				
 				try {
 					serverSocket.receive(packet);
 					Packet p = Packet.valueOf(new String(buff));
 					InetAddress clientAddress = packet.getAddress();
 					int clientPort = packet.getPort();
+
+					//wait for 2seconds then print packet then process
+					Thread t = timerThread(2);
+					t.start();
+					try{t.join();}catch(InterruptedException ie){}
+					System.out.println("RCVD: "+p.toString());
+
 					if(state == State.NONE){
 						
 						if(p.isSyncFlag()){ //first packet must be a SYN packet
@@ -108,35 +116,46 @@ public class Server {
 								continue;
 							}
 
-							if(p.isFinFlag() && p.getAckNum() == 0){ //this would be a FIN acknowledgement
-								state = State.FIN_ACKD;
-
-								//send last ACK for FIN
-								Packet finAck = new Packet();
-								finAck.setAckFlag(true);
-								send(clientAddress,clientPort,finAck.toString());
-								break;
-							}
-
 							SYNC_NUM = p.getAckNum();
-							//send unACKd data
+							//send unACKd data after 4seconds
+							t = timerThread(4);
+							t.start();
+							try{t.join();}catch(InterruptedException ie){}
 							for(int i=0; i<WINDOW_SIZE; i++){
 								Packet datum = new Packet();
 								datum.setSyncNum(SYNC_NUM+i);
 								int index = datum.getSyncNum()-INITIAL_SEGMENT;
-								System.out.println(index+"/"+INPUT_DATA.length());
 								if(index == INPUT_DATA.length()){
 									//send disconnect;
+									System.out.println("Data sent!");
 									datum = new Packet();
 									datum.setFinFlag(true);
+									state = State.FIN_SEND;
+									System.out.println("Fourway handshake 1/4");
+									//break;
 								}else{
-									datum.setData(""+INPUT_DATA.charAt(index));
+									try{datum.setData(""+INPUT_DATA.charAt(index));}catch(StringIndexOutOfBoundsException sioobe){}
 								}
 								send(clientAddress,clientPort, datum.toString());
 
 							}
 						}
 						System.out.println("RCVD: "+p.toString());
+					}else if(state == State.FIN_SEND){
+						
+						//this would be a FIN acknowledgement
+						if(p.isFinFlag() && p.getAckNum() == 0){ 
+							System.out.println("Fourway handshake 2/4");
+							System.out.println("Fourway handshake 3/4");
+							state = State.FIN_ACKD;
+
+							//send last ACK for FIN
+							Packet finAck = new Packet();
+							finAck.setAckFlag(true);
+							send(clientAddress,clientPort,finAck.toString());
+							System.out.println("Fourway handshake 4/4");
+							break;
+						}
 					}
 
 					
@@ -148,8 +167,10 @@ public class Server {
 				}
 
 				if(state == State.FIN_ACKD){
-					//close the connection
-					serverSocket.close();
+					Thread t = timerThread(10);
+					t.start();
+					try{t.join();}catch(InterruptedException ie){}
+					//serverSocket.close();
 				}
 			}
 		}
@@ -163,6 +184,20 @@ public class Server {
 		} catch (IOException e) {
 			System.out.println("Unable to send packet: "+message);
 		}
+	}
+
+	private static Thread timerThread(final int seconds){
+		return new Thread(new Runnable(){
+			@Override
+			public void run(){
+				try{
+
+					Thread.sleep(seconds*1000);
+				}catch(InterruptedException ie){
+
+				}
+			}
+		});
 	}
 }
 

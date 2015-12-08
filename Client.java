@@ -83,7 +83,13 @@ public class Client {
 				try {
 					clientSocket.receive(packet);
 					Packet p = Packet.valueOf(new String(buff));
-					
+					//wait for 2seconds then print packet then process
+					Thread t = timerThread(2);
+					t.start();
+					try{t.join();}catch(InterruptedException ie){}
+					System.out.println("RCVD: "+p.toString());
+
+
 					if(state == State.SYN_SEND){ //first packet must be an ACK+SYN packet
 						if(p.getAckNum() == SYNC_NUM +1){ //ack must be valid
 							System.out.println("Threeway handshake 2/3.");
@@ -105,13 +111,11 @@ public class Client {
 							System.out.println("Threeway handshake 3/3.");
 							SYNC_NUM =  INITIAL_SEGMENT = ACK_NUM;
 							SYNC_NUM--;
-							System.out.println("INDEX ZERO: "+INITIAL_SEGMENT);
 						}
 					}else if(state == State.ESTABLISHED){
 						//receive the data
 						
 						Packet ack = new Packet();
-						System.out.println("SYNN="+SYNC_NUM);
 						if(p.getSyncNum() > SYNC_NUM){
 							BUFFER.add(p);
 							ack.setAckFlag(true);
@@ -127,7 +131,6 @@ public class Client {
 								if(pckt.getSyncNum() <= SYNC_NUM){
 									continue; //packet duplicate
 								}
-								System.out.println("SQN:"+pckt.getSyncNum()+"");
 								contents[pckt.getSyncNum()-SYNC_NUM-1] = pckt.getData().charAt(0);
 							}
 
@@ -142,12 +145,15 @@ public class Client {
 							//clear data
 							BUFFER.clear();
 							if(p.isFinFlag()){
+								System.out.println("Fourway handshake 1/4");
 								//send fin+ack
 								state = State.FIN_RECV;
 								ack = new Packet();
 								ack.setFinFlag(true);
 								ack.setAckFlag(true);
 								send(ack.toString());
+								System.out.println("Fourway handshake 2/4");
+								System.out.println("Fourway handshake 3/4");
 							}else{
 								//send new ack
 								ack.setAckNum(INITIAL_SEGMENT+DATA.length());
@@ -158,9 +164,17 @@ public class Client {
 						SYNC_NUM = INITIAL_SEGMENT + DATA.length()-1;
 					}else if(state == State.FIN_RECV){
 						if(p.isAckFlag() && p.getAckNum()==0){
-							//timeout then terminate
+							System.out.println("Fourway handshake 4/4");
+							//10seconds timeout then terminate
+							t = timerThread(10);
+							t.start();
+							try{t.join();}catch(InterruptedException ie){}
+							clientSocket.close();
+							break;
 						}
 					}
+
+
 
 				} catch (IOException e) {
 					System.out.println("Failed to receive a packet... "+e.getMessage());
@@ -182,6 +196,20 @@ public class Client {
 		} catch (IOException e) {
 			System.out.println("Unable to send packet: "+message);
 		}
+	}
+
+	private static Thread timerThread(final int seconds){
+		return new Thread(new Runnable(){
+			@Override
+			public void run(){
+				try{
+
+					Thread.sleep(seconds*1000);
+				}catch(InterruptedException ie){
+
+				}
+			}
+		});
 	}
 }
 
