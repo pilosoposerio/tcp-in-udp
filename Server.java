@@ -4,16 +4,23 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.Scanner;
+import java.io.FileNotFoundException;
+import java.io.File;
 
 public class Server {
 	private static final int MAXIMUM_BUFFER_SIZE = 512;
+	private static final String INPUT_DATA_FILE_NAME = "data.in";
 	private static DatagramSocket serverSocket;
 	private static State state = State.NONE;
 	private static int ACK_NUM = 0;
 	private static int SYNC_NUM = 0;
+	private static int WINDOW_SIZE = 0;
+	private static String INPUT_DATA = "";
 	public static void main(String[] args) {
 		if(args.length < 1){
 			System.out.println("Usage is: java Server <port>");
+			return;
 		}
 		
 		int port = 0;
@@ -31,6 +38,7 @@ public class Server {
 			return;
 		}
 		
+		System.out.println("UDP listener for this server started!");
 		listener.start();
 	}
 	
@@ -42,12 +50,12 @@ public class Server {
 				DatagramPacket packet = new DatagramPacket(buff,buff.length);
 				
 				try {
-					System.out.println("UDP Server ready! Waiting for connections...");
 					serverSocket.receive(packet);
 					Packet p = Packet.valueOf(new String(buff).trim());
 					if(state == State.NONE){
 						
 						if(p.isSyncFlag()){ //first packet must be a SYN packet
+							System.out.println("Threeway handshake 1/3.");
 							InetAddress clientAddress = packet.getAddress();
 							int clientPort = packet.getPort();
 
@@ -56,20 +64,36 @@ public class Server {
 							ackSyncPacket.setAckFlag(true);
 							ACK_NUM = p.getSyncNum()+1;
 							ackSyncPacket.setAckNum(ACK_NUM);
-							ackSyncPacket.setSyncFlag(true);
+
 							SYNC_NUM = ThreadLocalRandom.current().nextInt(1, 5000);
+							ackSyncPacket.setSyncFlag(true);
 							ackSyncPacket.setSyncNum(SYNC_NUM);
+
 							send(clientAddress, clientPort, ackSyncPacket.toString());
 							state = State.SYN_RECV;
+							System.out.println("Threeway handshake 2/3.");
 						}
 					}else if(state == State.SYN_RECV){
-						if(p.isAckFlag() && p.getAckNum() == SYNC_NUM+ 1){ //must be an ACK packet and valid ack
+						if(p.isAckFlag() && p.getAckNum() == SYNC_NUM+1){ //must be an ACK packet and valid ack
+							WINDOW_SIZE = p.getWindowSize();
 							state = State.ESTABLISHED;
+							System.out.println("Threeway handshake 3/3.");
 						}
 					}else if(state == State.ESTABLISHED){
-						
+						//get the data
+						Scanner in = new Scanner(new File(INPUT_DATA_FILE_NAME));
+						while(in.hasNextLine()){
+							INPUT_DATA += in.nextLine();
+						}
+						in.close();
+						System.out.println("Data loaded was:\n"+INPUT_DATA);
+						//send the data
 					}
 
+					
+
+				} catch(FileNotFoundException fnfe){
+					System.out.println("File "+INPUT_DATA_FILE_NAME+" not found! Needed for the program!");
 				} catch (IOException e) {
 					System.out.println("Failed to receive a packet... "+e.getMessage());
 				}

@@ -10,7 +10,7 @@ public class Packet {
 	
 	/*SYNCF, ACKF, FINF, SYNN, ACKN, WS, DATA*/
 	public Packet(){
-		this(false, false, false, 0,0,0,"");
+		this(false, false, false, 0,0,0,null);
 	}
 	public Packet(boolean syncFlag, 
 			boolean ackFlag, 
@@ -117,13 +117,13 @@ public class Packet {
 			String[] pair = token.split("=");
 			switch(pair[0]){
 				case "SYNF":
-					packet.setSyncFlag(pair[1]=="1");
+					packet.setSyncFlag(pair[1].equals("1"));
 					break;
 				case "ACKF":
-					packet.setAckFlag(pair[1]=="1");
+					packet.setAckFlag(pair[1].equals("1"));
 					break;
 				case "FINF":
-					packet.setAckFlag(pair[1]=="1");
+					packet.setFinFlag(pair[1].equals("1"));
 					break;
 				case "SYNN":
 					packet.setSyncNum(Integer.parseInt(pair[1]));

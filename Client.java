@@ -19,6 +19,7 @@ public class Client {
 	public static void main(String[] args) {
 		if(args.length < 2){
 			System.out.println("Usage is: java Server <own port> <server address> <server port>");
+			return;
 		}
 		try{
 			selfPort = Integer.parseInt(args[0]);
@@ -61,6 +62,7 @@ public class Client {
 		syncPacket.setSyncNum(SYNC_NUM);
 		send(syncPacket.toString());
 		state = State.SYN_SEND;
+		System.out.println("Threeway handshake 1/3.");
 	}
 	
 	private static Thread listener = new Thread(new Runnable(){
@@ -76,15 +78,23 @@ public class Client {
 					
 					if(state == State.SYN_SEND){ //first packet must be an ACK+SYN packet
 						if(p.getAckNum() == SYNC_NUM +1){ //ack must be valid
+							System.out.println("Threeway handshake 2/3.");
 							//send ACK packet to server
 							Packet ackPacket = new Packet();
+							SYNC_NUM = p.getAckNum();
+							ackPacket.setSyncFlag(true);
+							ackPacket.setSyncNum(SYNC_NUM);
+
+							ACK_NUM = p.getSyncNum() + 1;
 							ackPacket.setAckFlag(true);
-							ackPacket.setAckNum(p.getSyncNum()+1);
+							ackPacket.setAckNum(ACK_NUM);
+
 							send(ackPacket.toString());
 							state = State.ESTABLISHED;
+							System.out.println("Threeway handshake 3/3.");
 						}
 					}else if(state == State.ESTABLISHED){
-						
+						//receive the data
 					}
 
 				} catch (IOException e) {
