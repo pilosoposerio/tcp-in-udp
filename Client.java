@@ -20,6 +20,7 @@ public class Client {
 	private static int SYNC_NUM = 0;
 	private static int WINDOW_SIZE = 0;
 	private static String DATA = "";
+	private static int INITIAL_SEGMENT = 0;
 	public static void main(String[] args) {
 		if(args.length < 2){
 			System.out.println("Usage is: java Server <own port> <server address> <server port>");
@@ -81,7 +82,7 @@ public class Client {
 				
 				try {
 					clientSocket.receive(packet);
-					Packet p = Packet.valueOf(new String(buff).trim());
+					Packet p = Packet.valueOf(new String(buff));
 					
 					if(state == State.SYN_SEND){ //first packet must be an ACK+SYN packet
 						if(p.getAckNum() == SYNC_NUM +1){ //ack must be valid
@@ -102,9 +103,63 @@ public class Client {
 							send(ackPacket.toString());
 							state = State.ESTABLISHED;
 							System.out.println("Threeway handshake 3/3.");
+							SYNC_NUM =  INITIAL_SEGMENT = ACK_NUM;
+							SYNC_NUM--;
+							System.out.println("INDEX ZERO: "+INITIAL_SEGMENT);
 						}
 					}else if(state == State.ESTABLISHED){
 						//receive the data
+						
+						Packet ack = new Packet();
+						System.out.println("SYNN="+SYNC_NUM);
+						if(p.getSyncNum() > SYNC_NUM){
+							BUFFER.add(p);
+							ack.setAckFlag(true);
+							ack.setAckNum(p.getSyncNum()+1);
+							ack.setWindowSize(WINDOW_SIZE-BUFFER.size());
+							send(ack.toString());
+						}
+
+						if(BUFFER.size() == WINDOW_SIZE || p.isFinFlag()){
+							//process data collected
+							char[] contents = new char[BUFFER.size()];
+							for(Packet pckt : BUFFER){
+								if(pckt.getSyncNum() <= SYNC_NUM){
+									continue; //packet duplicate
+								}
+								System.out.println("SQN:"+pckt.getSyncNum()+"");
+								contents[pckt.getSyncNum()-SYNC_NUM-1] = pckt.getData().charAt(0);
+							}
+
+							for(int i=0; i<BUFFER.size(); i++){
+								if(contents[i]=='\0'){
+									break;
+								}else{
+									DATA += ""+contents[i];
+								}
+							}
+							System.out.println("Current data: "+DATA);
+							//clear data
+							BUFFER.clear();
+							if(p.isFinFlag()){
+								//send fin+ack
+								state = State.FIN_RECV;
+								ack = new Packet();
+								ack.setFinFlag(true);
+								ack.setAckFlag(true);
+								send(ack.toString());
+							}else{
+								//send new ack
+								ack.setAckNum(INITIAL_SEGMENT+DATA.length());
+								ack.setWindowSize(WINDOW_SIZE-BUFFER.size());
+								send(ack.toString());
+							}
+						}
+						SYNC_NUM = INITIAL_SEGMENT + DATA.length()-1;
+					}else if(state == State.FIN_RECV){
+						if(p.isAckFlag() && p.getAckNum()==0){
+							//timeout then terminate
+						}
 					}
 
 				} catch (IOException e) {

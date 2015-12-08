@@ -17,6 +17,7 @@ public class Server {
 	private static int SYNC_NUM = 0;
 	private static int WINDOW_SIZE = 0;
 	private static String INPUT_DATA = "";
+	private static int INITIAL_SEGMENT = 0;
 	public static void main(String[] args) {
 		if(args.length < 1){
 			System.out.println("Usage is: java Server <port>");
@@ -51,13 +52,14 @@ public class Server {
 				
 				try {
 					serverSocket.receive(packet);
-					Packet p = Packet.valueOf(new String(buff).trim());
+					Packet p = Packet.valueOf(new String(buff));
+					InetAddress clientAddress = packet.getAddress();
+					int clientPort = packet.getPort();
 					if(state == State.NONE){
 						
 						if(p.isSyncFlag()){ //first packet must be a SYN packet
 							System.out.println("Threeway handshake 1/3.");
-							InetAddress clientAddress = packet.getAddress();
-							int clientPort = packet.getPort();
+							
 
 							//send ACK+SYN packet
 							Packet ackSyncPacket = new Packet();
@@ -74,22 +76,67 @@ public class Server {
 							System.out.println("Threeway handshake 2/3.");
 						}
 					}else if(state == State.SYN_RECV){
-						if(p.isAckFlag() && p.getAckNum() == SYNC_NUM+1){ //must be an ACK packet and valid ack
-							WINDOW_SIZE = p.getWindowSize();
+						if(p.isAckFlag() && p.getAckNum() == (++SYNC_NUM)){ //must be an ACK packet and valid ack
+							
 							state = State.ESTABLISHED;
 							System.out.println("Threeway handshake 3/3.");
-						}
-					}
 
-					if(state == State.ESTABLISHED){
-						//get the data
-						Scanner in = new Scanner(new File(INPUT_DATA_FILE_NAME));
-						while(in.hasNextLine()){
-							INPUT_DATA += in.nextLine();
-						}
-						in.close();
+							//get the data
+							Scanner in = new Scanner(new File(INPUT_DATA_FILE_NAME));
+							while(in.hasNextLine()){
+								INPUT_DATA += in.nextLine();
+							}
+							in.close();
 
-						//send the data
+							INITIAL_SEGMENT = SYNC_NUM;
+							//send first data
+							Packet datum = new Packet();
+							datum.setSyncNum(SYNC_NUM);
+							int index = datum.getSyncNum()-INITIAL_SEGMENT;
+							datum.setData(""+INPUT_DATA.charAt(index));
+							send(clientAddress,clientPort, datum.toString());
+
+
+						}
+					}else if(state == State.ESTABLISHED){
+						//send the WINDOW_SIZE bytes of data
+						WINDOW_SIZE = p.getWindowSize();
+						if(p.isAckFlag()){
+							
+							if(WINDOW_SIZE == 0){
+								//dontsend
+								continue;
+							}
+
+							if(p.isFinFlag() && p.getAckNum() == 0){ //this would be a FIN acknowledgement
+								state = State.FIN_ACKD;
+
+								//send last ACK for FIN
+								Packet finAck = new Packet();
+								finAck.setAckFlag(true);
+								send(clientAddress,clientPort,finAck.toString());
+								break;
+							}
+
+							SYNC_NUM = p.getAckNum();
+							//send unACKd data
+							for(int i=0; i<WINDOW_SIZE; i++){
+								Packet datum = new Packet();
+								datum.setSyncNum(SYNC_NUM+i);
+								int index = datum.getSyncNum()-INITIAL_SEGMENT;
+								System.out.println(index+"/"+INPUT_DATA.length());
+								if(index == INPUT_DATA.length()){
+									//send disconnect;
+									datum = new Packet();
+									datum.setFinFlag(true);
+								}else{
+									datum.setData(""+INPUT_DATA.charAt(index));
+								}
+								send(clientAddress,clientPort, datum.toString());
+
+							}
+						}
+						System.out.println("RCVD: "+p.toString());
 					}
 
 					
@@ -98,6 +145,11 @@ public class Server {
 					System.out.println("File "+INPUT_DATA_FILE_NAME+" not found! Needed for the program!");
 				} catch (IOException e) {
 					System.out.println("Failed to receive a packet... "+e.getMessage());
+				}
+
+				if(state == State.FIN_ACKD){
+					//close the connection
+					serverSocket.close();
 				}
 			}
 		}
