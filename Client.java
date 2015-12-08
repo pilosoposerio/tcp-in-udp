@@ -5,6 +5,8 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.List;
+import java.util.ArrayList;
 
 public class Client {
 
@@ -16,6 +18,8 @@ public class Client {
 	private static State state = State.NONE;
 	private static int ACK_NUM = 0;
 	private static int SYNC_NUM = 0;
+	private static int WINDOW_SIZE = 0;
+	private static String DATA = "";
 	public static void main(String[] args) {
 		if(args.length < 2){
 			System.out.println("Usage is: java Server <own port> <server address> <server port>");
@@ -65,6 +69,9 @@ public class Client {
 		System.out.println("Threeway handshake 1/3.");
 	}
 	
+
+	private static List<Packet> BUFFER = new ArrayList<Packet>();
+
 	private static Thread listener = new Thread(new Runnable(){
 		@Override
 		public void run() {
@@ -88,6 +95,9 @@ public class Client {
 							ACK_NUM = p.getSyncNum() + 1;
 							ackPacket.setAckFlag(true);
 							ackPacket.setAckNum(ACK_NUM);
+
+							WINDOW_SIZE = 16;
+							ackPacket.setWindowSize(WINDOW_SIZE);
 
 							send(ackPacket.toString());
 							state = State.ESTABLISHED;
